@@ -175,9 +175,8 @@ char *get_or_fetch_page(char url[])
         j++;
         i++;
     }
-    if (url[4] != ':' || url[strlen(url) - 1] != '/')
+    if (url[4] != ':')
     {
-        std::cout << first[4] << std::endl;
         printf("Incorrect URL\n");
         close(sockfd);
         return NULL;
@@ -214,7 +213,7 @@ char *get_or_fetch_page(char url[])
     }
 
     char request[MAX_PAGE_SIZE];
-    snprintf(request, sizeof(request), "GET %s HTTP/1.1\r\nhost: %s \r\n\r\n", second, first);
+    snprintf(request, sizeof(request), "GET %s/ HTTP/1.1\r\nhost: %s \r\n\r\n", second, first);
     printf("%s\n", request);
 
     // Send the HTTP GET request.
