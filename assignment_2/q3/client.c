@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
     if (argc != 3)
     {
-        printf("\n Usage: %s <ip of server> \n", argv[0]);
+        printf("\n Usage: %s <ip of server> <port>\n", argv[0]);
         return 1;
     }
 

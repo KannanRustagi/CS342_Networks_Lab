@@ -87,6 +87,9 @@ void *write_msg(void *arg)
 
 int main(int argc, char *argv[])
 {
+    if(argc!=2){
+        printf("Incorrect arguments\n");
+    }
     int listenfd = 0;
     struct sockaddr_in serv_addr;
     char sendBuff[1025];
