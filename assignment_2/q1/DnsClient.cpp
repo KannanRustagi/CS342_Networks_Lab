@@ -1,36 +1,37 @@
-// Header Files
-#include <stdio.h>      //std::cout<<
-#include <string.h>     //strlen
-#include <stdlib.h>     //malloc
-#include <sys/socket.h> //you know what this is for
-#include <arpa/inet.h>  //inet_addr , inet_ntoa , ntohs etc
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
-#include <unistd.h> //getpid
+#include <unistd.h>
 #include <iostream>
 #include <map>
 #include <vector>
 
-// List of DNS Servers registered on the system
+// Ip address of the DNS Server
+// Google DNS = 8.8.8.8
+// IITG DNS = 172.17.1.1
 char dnsServer[100] = "172.17.1.1";
 
 // DNS header structure
 struct dns_header
 {
-    unsigned short id;         // identification number
-    unsigned char rd : 1;      // recursion desired
-    unsigned char tc : 1;      // truncated message
-    unsigned char aa : 1;      // authoritive answer
-    unsigned char opcode : 4;  // purpose of message
-    unsigned char qr : 1;      // query/response flag
-    unsigned char rcode : 4;   // response code
-    unsigned char cd : 1;      // checking disabled
-    unsigned char ad : 1;      // authenticated data
-    unsigned char z : 1;       // its z! reserved
-    unsigned char ra : 1;      // recursion available
-    unsigned short q_count;    // number of question entries
-    unsigned short ans_count;  // number of answer entries
-    unsigned short auth_count; // number of authority entries
-    unsigned short add_count;  // number of resource entries
+    unsigned short id;        // identification number
+    unsigned char rd : 1;     // recursion desired
+    unsigned char tc : 1;     // truncated message
+    unsigned char aa : 1;     // authoritive answer
+    unsigned char opcode : 4; // purpose of message
+    unsigned char qr : 1;     // query/response flag
+    unsigned char rcode : 4;  // response code
+    unsigned char cd : 1;     // checking disabled
+    unsigned char ad : 1;     // authenticated data
+    unsigned char z : 1;      // its z! reserved
+    unsigned char ra : 1;     // recursion available
+    unsigned short qCount;    // number of question entries
+    unsigned short ansCount;  // number of answer entries
+    unsigned short authCount; // number of authority entries
+    unsigned short addCount;  // number of resource entries
 };
 
 // Constant sized fields of query structure
@@ -66,9 +67,11 @@ struct query
     struct question *ques;
 };
 
+// Cache for DNS Queries
 std::map<std::string, std::vector<std::string>> dnsCache;
 
-// This will convert www.google.com to 3www6google3com
+// This will convert the domain name into DNS Format
+// eg. www.x.com to 3www1x3com
 void DnsFormat(unsigned char *dns, unsigned char *host)
 {
     int prev = 0, i;
@@ -83,11 +86,13 @@ void DnsFormat(unsigned char *dns, unsigned char *host)
             {
                 *dns++ = host[prev];
             }
-            prev++; // or prev=i+1;
+            prev++;
         }
     }
     *dns++ = '\0';
 }
+
+// This reads the received answers to user readable format taking DNS compression in account and decoding from DNS Format
 u_char *ReadName(unsigned char *reader, unsigned char *buffer, int *count)
 {
     unsigned char *name;
@@ -99,12 +104,12 @@ u_char *ReadName(unsigned char *reader, unsigned char *buffer, int *count)
 
     name[0] = '\0';
 
-    // read the names in 3www6google3com format
+    // read the names in 3www1x3com format
     while (*reader != 0)
     {
         if (*reader >= 192)
         {
-            offset = (*reader) * 256 + *(reader + 1) - 49152; // 49152 = 11000000 00000000 ;)
+            offset = (*reader) * 256 + *(reader + 1) - 49152; // 49152 = 11000000 00000000
             reader = buffer + offset - 1;
             jumped = 1; // we have jumped to another location so counting wont go up!
         }
@@ -127,7 +132,7 @@ u_char *ReadName(unsigned char *reader, unsigned char *buffer, int *count)
         *count = *count + 1; // number of steps we actually moved forward in the packet
     }
 
-    // now convert 3www6google3com0 to www.google.com
+    // now convert 3www1x3com0 to www.x.com
     for (i = 0; i < (int)strlen((const char *)name); i++)
     {
         p = name[i];
@@ -141,15 +146,16 @@ u_char *ReadName(unsigned char *reader, unsigned char *buffer, int *count)
     name[i - 1] = '\0'; // remove the last dot
     return name;
 }
+
 // Perform a DNS query by sending a packet
-void FetchIpFromServer(unsigned char *host, int query_type)
+void FetchIpFromServer(unsigned char *host)
 {
     unsigned char buf[65536], *qname, *reader;
     int i, j, stop, s;
 
     struct sockaddr_in a;
 
-    struct res_record answers[20], auth[20], addit[20]; // the replies from the DNS server
+    struct res_record answers[20]; // struct to store answers received back in the query response
     struct sockaddr_in dest;
 
     struct dns_header *dns = NULL;
@@ -157,11 +163,12 @@ void FetchIpFromServer(unsigned char *host, int query_type)
 
     std::cout << "Resolving " << host;
 
-    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP); // UDP packet for DNS queries
+    // Initialising UDP socket for DNS queries
+    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     dest.sin_family = AF_INET;
     dest.sin_port = htons(53);
-    dest.sin_addr.s_addr = inet_addr(dnsServer); // dns servers
+    dest.sin_addr.s_addr = inet_addr(dnsServer); // dns server
 
     // Set the DNS structure to standard queries
     dns = (struct dns_header *)&buf;
@@ -177,10 +184,10 @@ void FetchIpFromServer(unsigned char *host, int query_type)
     dns->ad = 0;
     dns->cd = 0;
     dns->rcode = 0;
-    dns->q_count = htons(1);
-    dns->ans_count = 0;
-    dns->auth_count = 0;
-    dns->add_count = 0;
+    dns->qCount = htons(1);
+    dns->ansCount = 0;
+    dns->authCount = 0;
+    dns->addCount = 0;
 
     // point to the query portion
     qname = (unsigned char *)&buf[sizeof(struct dns_header)];
@@ -188,8 +195,8 @@ void FetchIpFromServer(unsigned char *host, int query_type)
     DnsFormat(qname, host);
     qinfo = (struct question *)&buf[sizeof(struct dns_header) + (strlen((const char *)qname) + 1)]; // fill it
 
-    qinfo->qtype = htons(query_type); // type of the query , A , MX , CNAME , NS etc
-    qinfo->qclass = htons(1);         // its internet (lol)
+    qinfo->qtype = htons(1); // type of the query , here A, i.e 1
+    qinfo->qclass = htons(1);
 
     std::cout << ("\nSending Packet...");
     if (sendto(s, (char *)buf, sizeof(struct dns_header) + (strlen((const char *)qname) + 1) + sizeof(struct question), 0, (struct sockaddr *)&dest, sizeof(dest)) < 0)
@@ -213,13 +220,13 @@ void FetchIpFromServer(unsigned char *host, int query_type)
     reader = &buf[sizeof(struct dns_header) + (strlen((const char *)qname) + 1) + sizeof(struct question)];
 
     std::cout << "The response contains : " << std::endl;
-    std::cout << ntohs(dns->q_count) << " Questions" << std::endl;
-    std::cout << ntohs(dns->ans_count) << " Answers" << std::endl;
+    std::cout << ntohs(dns->qCount) << " Questions" << std::endl;
+    std::cout << ntohs(dns->ansCount) << " Answers" << std::endl;
 
     // Start reading answers
     stop = 0;
 
-    for (i = 0; i < ntohs(dns->ans_count); i++)
+    for (i = 0; i < ntohs(dns->ansCount); i++)
     {
         answers[i].name = ReadName(reader, buf, &stop);
         reader = reader + stop;
@@ -248,10 +255,10 @@ void FetchIpFromServer(unsigned char *host, int query_type)
     }
 
     // print answers
-    printf("\nAnswer Records : %d \n", ntohs(dns->ans_count));
+    printf("\nAnswer Records : %d \n", ntohs(dns->ansCount));
     std::string domain(reinterpret_cast<char *>(host));
     domain.pop_back();
-    for (i = 0; i < ntohs(dns->ans_count); i++)
+    for (i = 0; i < ntohs(dns->ansCount); i++)
     {
         printf("Name : %s ", answers[i].name);
         if (ntohs(answers[i].resource->type) == 1) // IPv4 address
@@ -269,9 +276,11 @@ void FetchIpFromServer(unsigned char *host, int query_type)
     return;
 }
 
+// Function to execute DNS queries, return IP from cache if present else sends a query to the DNS server
 void dnsQuery(u_char *hostname)
 {
     std::string domain(reinterpret_cast<char *>(hostname));
+    // check if present in cache
     if (dnsCache.count(domain))
     {
         std::cout << "Served from Cache\n";
@@ -280,10 +289,11 @@ void dnsQuery(u_char *hostname)
             std::cout << domain << ": " << i << std::endl;
         }
     }
+    // send to DNS server if not in cache
     else
     {
         std::cout << "Not in cache" << std::endl;
-        FetchIpFromServer(hostname, 1);
+        FetchIpFromServer(hostname);
     }
 }
 
@@ -291,10 +301,9 @@ int main()
 {
     unsigned char hostname[100];
 
-    // Get the DNS servers from the resolv.conf file
     while (1)
     {
-        // Get the hostname from the terminal
+        // Get the domain name from the terminal
         std::cout << ("Enter Hostname to Lookup : ");
         std::cin >> hostname;
 
