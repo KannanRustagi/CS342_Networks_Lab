@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(5000);
+    serv_addr.sin_port = htons(atoi(argv[1]));
 
     // Bind the socket to the server address
     bind(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
