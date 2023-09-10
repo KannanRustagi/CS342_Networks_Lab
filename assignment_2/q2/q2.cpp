@@ -267,7 +267,7 @@ int main()
     {
         char url[100];
         memset(url, 0, sizeof url);
-        printf("Please enter the url: ");
+        printf("Please enter the url or \"exit\" to close: ");
         scanf("%s", url);
         if (strcmp(url, "exit") == 0)
         {
@@ -277,10 +277,10 @@ int main()
         char *page1 = get_or_fetch_page(url);
         if (page1 != NULL)
         {
-            printf("Page 1 content:\n%s\n\n\n", page1);
+            printf("Page content:\n%s\n\n\n", page1);
         }
         printf("Cache Contents:\n\n");
         display_cache();
-        printf("\n\n\n\n\n\n\n");
+        printf("\n\n\n\n\n");
     }
 }
