@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     char s[100];
 
-    if (argc != 2)
+    if (argc != 3)
     {
         printf("\n Usage: %s <ip of server> \n", argv[0]);
         return 1;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     memset(&serv_addr, '0', sizeof(serv_addr));
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(5000);
+    serv_addr.sin_port = htons(atoi(argv[2]));
 
     // Convert the server IP address from text to binary
     printf("Server present at the IP address: %s\n", argv[1]);
