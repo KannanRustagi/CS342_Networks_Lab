@@ -10,7 +10,7 @@
 #include <time.h>
 #include <pthread.h>
 
-#define MAX 5
+#define MAX 20
 int connfd[MAX] = {0};
 int i, e[MAX] = {0};
 pthread_t tid2;
