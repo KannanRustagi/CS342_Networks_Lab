@@ -23,7 +23,7 @@ void *read_msg(void *arg)
     // Check if the received message is "exit"
     if (strcmp(str, "exit") == 0)
     {
-        printf("OK Bye!\n");
+        printf("Server Closed. Disconnecting...\n");
         close(sockfd);
         exit(0);
     }

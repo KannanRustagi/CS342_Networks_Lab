@@ -27,8 +27,14 @@ void *read_msg(void *arg)
     // Check if the received message is "exit"
     if (strcmp(str, "exit") == 0)
     {
+        sprintf(str, "  Client %c is Offline\n", (char)(65 + k));
+        str[99] = 'S';
+        for (l = 0; l < i; l++)
+            if (l != k && connfd[l]!=-1)
+                write(connfd[l], str, 100);
         printf("Client %c is Offline\n", (char)(65 + k));
         close(connfd[k]);
+        connfd[k]=-1;
         return (NULL);
     }
 
@@ -36,7 +42,7 @@ void *read_msg(void *arg)
     if (str[0] == '*')
     {
         for (l = 0; l < i; l++)
-            if (l != k)
+            if (l != k && connfd[l]!=-1)
                 write(connfd[l], str, 100);
 
         printf("%c says: %s\n", str[99], str);
@@ -67,6 +73,7 @@ void *write_msg(void *arg)
 
     // Send the message to all clients
     for (l = 0; l < i; l++)
+    if(connfd[l]!=-1)
         write(connfd[l], str, 100);
 
     // Check if the entered message is "exit" to exit the program
