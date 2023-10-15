@@ -5,9 +5,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <time.h>
 
-// For simulating how NACK functions, we will send a NACK for every nth packet received
-#define n 3
+#define n 4
 
 int main()
 {
@@ -86,7 +86,6 @@ int main()
 
     while (1)
     {   
-        
         memset(ack, '\0', sizeof(ack));
         memset(pkt, '\0', sizeof(pkt));
 

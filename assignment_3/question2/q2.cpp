@@ -157,7 +157,7 @@ int main()
     vector<node> nodes;
 
     trans_times.resize(N);
-    num_backoffs.resize(N,0);
+    
     for (int i = 0; i < N; i++)
     {
         node station(i + 1, 8);
