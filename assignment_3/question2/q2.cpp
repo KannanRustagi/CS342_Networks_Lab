@@ -119,6 +119,7 @@ void handle_channel(int n, vector<node> &nodes)
                 else
                 {
                     cout << "Collision Detected\n";
+                    num_try_nodes++;
                     nodes[i].backoff();
                     c = 1;
                 }
@@ -131,8 +132,11 @@ void handle_channel(int n, vector<node> &nodes)
         // if a collision has occured
         if (c)
         {
-            if (node_id != -1)
+            if (node_id != -1){
                 nodes[node_id - 1].backoff();
+                num_try_nodes++;
+            }
+                
             tot_collisions++;
         }
         else
