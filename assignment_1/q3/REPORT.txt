@@ -1,0 +1,13 @@
+Question 1: Start your TCP client application without the TCP server running. What happens? Why?
+Ans:
+When the TCP client application is started before the TCP server is running the program terminates saying unable to
+connect to server. This happens because the connect() function returns an error since it is unable to find a running 
+server at the address provided
+
+
+Question 2: Start your UDP client application without the UDP server running. What happens? Why?
+Ans:
+When the UDP client application is started before the UDP server is running, no error is thrown because in UDP 
+we don't need to connect our client to a specific server address. The client would appear to work fine however it would
+not receive any acknowledgements or reply back from the server as the server is not running.
+
